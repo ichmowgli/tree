@@ -1,11 +1,47 @@
+import { Loader, Search } from "lucide-react";
 import { FileTree } from "./components/FileTree";
-import { MOCK_FILE_NODES } from "./mocks";
-import { transformFileTreeArrayIntoRenderableNode } from "./transformer";
+import { useFilesStore } from "./store";
+import { ElementRef, useRef } from "react";
+import { Input } from "./components/ui/input";
+import { Button } from "./components/ui/button";
+
+const SearchBar = () => {
+  const { searchTerm, setSearchTerm } = useFilesStore();
+
+  const ref = useRef<ElementRef<"input">>();
+
+  return (
+    <div>
+      <Input
+        defaultValue={searchTerm}
+        placeholder="search term..."
+        ref={ref as any}
+      />
+      <Button
+        onClick={() => {
+          setSearchTerm(ref.current!.value);
+        }}
+      >
+        <Search />
+      </Button>
+    </div>
+  );
+};
 
 export default function App() {
-  // make this call `fetchFileTree` and store in zustand
-  const nodes = MOCK_FILE_NODES;
-  const rootNode = transformFileTreeArrayIntoRenderableNode(nodes);
+  const { filtered, fetchFiles } = useFilesStore();
 
-  return <FileTree root={rootNode} />;
+  if (!filtered) {
+    fetchFiles();
+    return <Loader />;
+  }
+
+  return (
+    <div>
+      <SearchBar />
+      {filtered.map((node) => (
+        <FileTree node={node} />
+      ))}
+    </div>
+  );
 }

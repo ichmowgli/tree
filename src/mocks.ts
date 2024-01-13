@@ -25,6 +25,15 @@ export const MOCK_FILE_NODES: FileTreeNode[] = [
     writable: false,
   },
   {
+    id: 100,
+    parentId: null,
+    name: "root2",
+    childrenIds: [],
+    movable: false,
+    editable: false,
+    writable: false,
+  },
+  {
     id: 2,
     parentId: 1,
     name: "dir1",
