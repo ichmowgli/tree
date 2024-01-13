@@ -37,7 +37,7 @@ const RenameButton: React.FC<DescendantProps> = ({ node }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Edit2 className="mr-0" />
+        <Edit2 className="mr-1 icon" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -89,7 +89,7 @@ const DeleteButton: React.FC<DescendantProps> = ({ node }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Trash className="mr-0" />
+        <Trash className="mr-0 ml-1 icon" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -135,7 +135,7 @@ const FileTreeItem: React.FC<DescendantProps> = ({ node }) => {
   ) : (
     <ChevronDown />
   );
-  const icon = isFolder ? <Folder /> : <File />;
+  const icon = isFolder ? <Folder className="mr-1 ml-1" /> : <File />;
 
   const shouldRenderChildren = isFolder && !node.isCollapsed;
   const childrenNodes =
@@ -149,7 +149,12 @@ const FileTreeItem: React.FC<DescendantProps> = ({ node }) => {
       <div className="flex flex-row w-full mb-2 justify-between">
         <div className="flex flex-row">
           {isFolder && (
-            <div onClick={() => triggerCollapsed(node.id)}>{chevron}</div>
+            <div
+              className="flex icon justify-center items-center"
+              onClick={() => triggerCollapsed(node.id)}
+            >
+              {chevron}
+            </div>
           )}
           {icon}
           {node.name}
@@ -171,7 +176,7 @@ type FileTreeProps = {
 
 export const FileTree: React.FC<FileTreeProps> = ({ node, className }) => {
   return (
-    <div className={cn("w-60", className)}>
+    <div className={cn("w-60 ", className)}>
       {node.children!.map((child) => (
         <FileTreeItem node={child} key={"root-" + child.id} />
       ))}
