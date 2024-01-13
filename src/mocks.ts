@@ -3,14 +3,10 @@ export type FileTreeNode = {
   parentId: number | null;
   name: string;
 
-  /** `children = null` means that we're looking at a file  */
   childrenIds: number[] | null;
 
-  /** can we move this file/dir? */
   movable: boolean;
-  /** can we rename this file/dir? */
   editable: boolean;
-  /** can we move files to this dir? */
   writable: boolean;
 };
 
@@ -75,7 +71,7 @@ export const MOCK_FILE_NODES: FileTreeNode[] = [
     name: "dir1-2",
     childrenIds: null,
     movable: true,
-    editable: true,
+    editable: false,
     writable: true,
   },
   {

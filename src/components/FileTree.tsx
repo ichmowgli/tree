@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -44,7 +45,7 @@ export const FileTree: React.FC<Props> = ({ node }) => {
         )}
         {icon}
         {node.name} {isFolder}
-        {node.editable && (
+        {!isFolder && (
           <Dialog>
             <DialogTrigger asChild>
               <Edit2 className="mr-0" />
@@ -52,6 +53,11 @@ export const FileTree: React.FC<Props> = ({ node }) => {
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Rename the file</DialogTitle>
+                {!node.editable && (
+                  <DialogDescription>
+                    You don't have permissions to rename this file 😔
+                  </DialogDescription>
+                )}
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -62,6 +68,7 @@ export const FileTree: React.FC<Props> = ({ node }) => {
                     id="name"
                     value={newName}
                     className="col-span-3"
+                    disabled={!node.editable}
                     onChange={(e) => {
                       setNewName(e.target.value);
                     }}
@@ -75,6 +82,7 @@ export const FileTree: React.FC<Props> = ({ node }) => {
                     onClick={() => {
                       renameFile(node.id, newName);
                     }}
+                    disabled={!node.editable}
                   >
                     Save changes
                   </Button>

@@ -141,6 +141,12 @@ export const useFilesStore = create<FileStore>((set, get) => ({
     get().setFiles(backendResponse);
   },
   renameFile: async (id, name) => {
+    const file = findInTreeById(get().transformed!, id);
+
+    if (file && !file.editable) {
+      throw new Error("File is not editable");
+    }
+
     const backendResponse = await Api.renameFile(id, name);
     const _files = get()._files!.map((file) =>
       file.id === id ? backendResponse : file,
