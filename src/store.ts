@@ -5,46 +5,56 @@ import * as Api from "./mocks";
 
 type FileStore = {
   _files: FileTreeNode[] | undefined;
-  transformed: RenderableFileTreeNode[] | undefined;
+  transformed: RootNode | undefined;
   searchTerm: string | undefined;
-  filtered: RenderableFileTreeNode[] | undefined;
+  filtered: RootNode | undefined;
 
   triggerCollapsed: (id: number) => void;
   setSearchTerm: (term: string | undefined) => void;
   setFiles: (files: FileTreeNode[]) => void;
   fetchFiles: () => Promise<void>;
   renameFile: (id: number, name: string) => void;
+  deleteFile: (id: number) => void;
   moveFile: (id: number, destinationId: number) => void;
-  transformFilesIntoRenderableNodes: (
-    files: FileTreeNode[],
-  ) => RenderableFileTreeNode[];
+  transformFilesIntoRenderableNodes: (files: FileTreeNode[]) => RootNode;
   updateFiltered: () => void;
 };
 
+export type RootNode = Omit<
+  RenderableFileTreeNode,
+  "parentId" | "id" | "children"
+> & {
+  id: null;
+  parentId: null;
+  children: RenderableFileTreeNode[];
+};
+
 const findInTreeById = (
-  tree: RenderableFileTreeNode[],
+  tree: RenderableFileTreeNode | RootNode,
   id: number,
 ): RenderableFileTreeNode | null => {
-  for (const node of tree) {
-    if (node.id === id) {
-      return node;
-    }
+  if (tree.id === id) {
+    return tree;
+  }
 
-    if (node.children) {
-      const found = findInTreeById(node.children, id);
-      if (found) {
-        return found;
-      }
+  if (tree.children === null) {
+    return null;
+  }
+
+  for (const child of tree.children) {
+    const result = findInTreeById(child, id);
+    if (result) {
+      return result;
     }
   }
 
   return null;
 };
 
-const canMove = (
+export const canMoveAIntoB = (
   id: number,
   destinationId: number,
-  tree: RenderableFileTreeNode[],
+  tree: RootNode,
 ): boolean => {
   const node = findInTreeById(tree, id);
   if (!node) {
@@ -61,7 +71,7 @@ const canMove = (
 
   if (node.children) {
     return node.children.every((child) =>
-      canMove(child.id, destinationId, tree),
+      canMoveAIntoB(child.id, destinationId, tree),
     );
   }
 
@@ -131,10 +141,10 @@ export const useFilesStore = create<FileStore>((set, get) => ({
     };
 
     const filtered = get()
-      .transformed!.filter(hasMatchingDescendant)
+      .transformed!.children!.filter(hasMatchingDescendant)
       .map(filterOutUnmatchingDescendants);
 
-    set({ filtered });
+    set({ filtered: { ...get().transformed!, children: filtered } });
   },
   fetchFiles: async () => {
     const backendResponse = await Api.fetchFileTree();
@@ -153,8 +163,12 @@ export const useFilesStore = create<FileStore>((set, get) => ({
     );
     get().setFiles(_files);
   },
+  deleteFile: async (id) => {
+    await Api.deleteFile(id);
+    get().fetchFiles();
+  },
   moveFile: async (id, destinationId) => {
-    if (!canMove(id, destinationId, get().transformed!)) {
+    if (!canMoveAIntoB(id, destinationId, get().transformed!)) {
       throw new Error("Cannot move file into itself");
     }
 
@@ -165,28 +179,50 @@ export const useFilesStore = create<FileStore>((set, get) => ({
     get().setFiles(_files);
   },
   transformFilesIntoRenderableNodes: (files) => {
-    function buildTree(parentId: number | null): RenderableFileTreeNode[] {
-      const children: RenderableFileTreeNode[] = [];
+    const map = new Map();
 
-      for (const node of files) {
-        if (node.parentId === parentId) {
-          const childNode = {
-            id: node.id,
-            parentId: node.parentId,
-            name: node.name,
-            children: node.childrenIds ? buildTree(node.id) : null,
-            isCollapsed: false,
-            movable: node.movable,
-            editable: node.editable,
-            writable: node.writable,
-          };
-          children.push(childNode);
-        }
-      }
+    map.set(null, {
+      id: null,
+      name: "root",
+      parentId: null,
+      children: [],
+      isCollapsed: false,
+      editable: false,
+      writable: true,
+      movable: false,
+    });
 
-      return children;
+    for (const file of files) {
+      map.set(file.id, {
+        id: file.id,
+        name: file.name,
+        parentId: file.parentId,
+        children: file.childrenIds ? [] : null,
+        isCollapsed: false,
+        editable: file.editable,
+        writable: file.writable,
+        movable: file.movable,
+      });
     }
 
-    return buildTree(null);
+    for (const file of files) {
+      const node = map.get(file.id);
+      if (!node) {
+        continue;
+      }
+
+      const parent = map.get(file.parentId);
+      if (!parent) {
+        continue;
+      }
+
+      if (parent.children === null) {
+        continue;
+      }
+
+      parent.children.push(node);
+    }
+
+    return map.get(null);
   },
 }));

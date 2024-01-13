@@ -10,7 +10,7 @@ export type FileTreeNode = {
   writable: boolean;
 };
 
-export const MOCK_FILE_NODES: FileTreeNode[] = [
+let MOCK_FILE_NODES: FileTreeNode[] = [
   {
     id: 1,
     parentId: null,
@@ -145,3 +145,26 @@ export async function moveFile(
   file.parentId = parentId;
   return file;
 }
+
+export const deleteFile = async (id: number): Promise<void> => {
+  const file = MOCK_FILE_NODES.find((file) => file.id === id);
+  if (!file) {
+    throw new Error("File not found");
+  }
+
+  if (file.parentId === null) {
+    MOCK_FILE_NODES = MOCK_FILE_NODES.filter((file) => file.id !== id);
+    return;
+  }
+
+  if (!file.editable) {
+    throw new Error("You can't delete this file");
+  }
+
+  const parent = MOCK_FILE_NODES.find(
+    (pfile) => pfile.id === file.parentId,
+  ) as FileTreeNode;
+
+  parent.childrenIds = parent.childrenIds!.filter((childId) => childId !== id);
+  MOCK_FILE_NODES = MOCK_FILE_NODES.filter((file) => file.id !== id);
+};
